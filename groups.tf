@@ -33,4 +33,3 @@ resource "azuread_group_member" "engineers" {
   group_object_id  = azuread_group.engineers.id
   member_object_id = each.value.id
 }
-
