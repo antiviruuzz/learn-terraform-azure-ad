@@ -13,7 +13,7 @@ resource "azuread_group" "admins" {
   )
   #Make your Azure account as owner of the group SG Admins.
   owners           = [data.azurerm_client_config.current.object_id]
-  security_enabled = true  
+  security_enabled = true
   #assignable_to_role  = true
 }
 
@@ -98,17 +98,17 @@ resource "azurerm_role_assignment" "guest_reader" {
   principal_id         = azuread_group.guests.object_id
 }
 
-resource "azurerm_role_assignment" "dev_reader" {  
+resource "azurerm_role_assignment" "dev_reader" {
   scope                = data.azurerm_subscription.primary.id
   role_definition_name = "Reader"
-  principal_id          = azuread_group.developers.object_id
+  principal_id         = azuread_group.developers.object_id
 }
 
 resource "azurerm_role_assignment" "admin_admin" {
   scope                = data.azurerm_subscription.primary.id
   role_definition_name = "Owner"
-  principal_id          = azuread_group.admins.object_id
-} 
+  principal_id         = azuread_group.admins.object_id
+}
 
 /* Assign IAM Contributor role to Entra ID group SG Admins on "skillup-rg".
 Assign IAM User Access Administrator role to Entra ID group SG Admins on "skillup-rg".

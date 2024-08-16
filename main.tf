@@ -8,7 +8,7 @@ data "azurerm_client_config" "current" {
 }
 
 data "azuread_user" "current_user" {
-  object_id = data.azurerm_client_config.current.object_id  
+  object_id = data.azurerm_client_config.current.object_id
 }
 data "azurerm_subscription" "primary" {
 }
@@ -18,16 +18,16 @@ locals {
   users       = csvdecode(file("${path.module}/users.csv"))
   cur_user_id = data.azuread_user.current_user.object_id
   tags = {
-        purpose = "Skillup"
-        format(
-            "%s%s",
-            "startdate-",
-            local.cur_user_id
-          ) = "16.08.24"
+    purpose = "Skillup"
+    format(
+      "%s%s",
+      "startdate-",
+      local.cur_user_id
+    ) = "16.08.24"
   }
   tags_cli_format = join(" ", [for k, v in local.tags : "${k}=${v}"])
 
- 
+
 }
 
 # Create tags for manually created subscription
@@ -98,14 +98,14 @@ resource "azuread_service_principal" "app_reg_sp" {
 
 #Create new resource group with name "skillup-<your user object ID>-rg" in location chosen before.
 resource "azurerm_resource_group" "skillup_rg" {
-  name     = format(
+  name = format(
     "%s%s%s",
     "skillup-",
     local.cur_user_id,
     "-rg"
   )
   location = var.location
-  tags = local.tags
+  tags     = local.tags
 }
 
 #Assign IAM Contributor role to Entra ID App "skillup-<your user object ID>-cicd-app" on "skillup-rg".
