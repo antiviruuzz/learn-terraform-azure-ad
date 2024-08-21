@@ -14,8 +14,7 @@ data "azurerm_subscription" "primary" {
 }
 
 locals {
-  domain_name = data.azuread_domains.default.domains.0.domain_name
-  users       = csvdecode(file("${path.module}/users.csv"))
+  domain_name = data.azuread_domains.default.domains.0.domain_name  
   cur_user_id = data.azuread_user.current_user.object_id
   tags = {
     purpose = "Skillup"
@@ -43,14 +42,12 @@ resource "null_resource" "tag_subscription" {
     EOT
   }
 }
-#Create Entra ID users:
-#Display name: admin, User principal name: admin-<your user object ID>
-#Display name: dev, User principal name: dev-<your user object ID>
-#Display name: guest, User principal name: guest-<your user object ID>
-# Can't create users in formaat guest-<your user object ID> due to Azure policies, instead domain name should be used
 
-resource "azuread_user" "users" {
+
+/* resource "azuread_user" "users" {
+  
   for_each = { for user in local.users : user.first_name => user }
+  
 
   user_principal_name = format(
     "%s@%s",
@@ -68,7 +65,9 @@ resource "azuread_user" "users" {
 
   display_name = each.value.first_name
   department   = each.value.department
-}
+} */
+
+
 
 #Create new app registration with name "skillup-<your user object ID>-cicd-app" with single tenant API Access.
 resource "azuread_application_registration" "app" {
@@ -114,3 +113,4 @@ resource "azurerm_role_assignment" "contributor_app_rg" {
   role_definition_name = "Contributor"
   principal_id         = azuread_service_principal.app_reg_sp.object_id
 } 
+

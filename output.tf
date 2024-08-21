@@ -11,3 +11,4 @@ output "rg_name" {
 output "user_principal_name" {
   value = data.azuread_user.current_user.user_principal_name
 }
+
