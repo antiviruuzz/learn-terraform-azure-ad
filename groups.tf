@@ -6,17 +6,17 @@
 # Can't create users in formaat guest-<your user object ID> due to Azure policies, instead domain name should be used
 
 resource "azuread_user" "users" {
-  for_each = var.users
-  
-  user_principal_name = "${each.display}@${local.domain_name}"
-  display_name = each.value.display
+  for_each            = { for user in local.users : user.name => user }
+  user_principal_name = "${each.key}@${local.domain_name}"
+  display_name        = each.key
+  mail_nickname       = each.key
   password = format(
     "%s%s%s!",
     local.cur_user_id,
-    substr(lower(each.value.display), 0, 2),
-    length(each.value.display)
+    substr(lower(each.key), 0, 2),
+    length(each.key)
   )
-  department   = each.value.department
+  force_password_change = false
 }
 
 #Create Entra ID groups: SG Admins (<your user object ID>), SG Developers (<your user object ID>), 
@@ -25,6 +25,7 @@ resource "azuread_user" "users" {
 #Add user dev in a group SG Developers.
 #Add user guest in a group SG Guests.
 #Make your Azure account as owner of the group SG Admins.
+
 resource "azuread_group" "admins" {
   display_name = format(
     "%s%s",
@@ -34,56 +35,55 @@ resource "azuread_group" "admins" {
   #Make your Azure account as owner of the group SG Admins.
   owners           = [data.azurerm_client_config.current.object_id]
   security_enabled = true
- 
-    #assignable_to_role  = true
+
+  #assignable_to_role  = true
 }
 
 resource "azuread_group_member" "admins" {
-  
-  for_each = { for u in azuread_user.users : u.mail_nickname => u if u.department == "Admins" }
+  for_each         = { for user in local.users : user.name => user if user.department == "Admins" }
   group_object_id  = azuread_group.admins.id
-  member_object_id = each.value.id
+  member_object_id = azuread_user.users[each.key].id
 }
 
 # Make admin user as owner of group SG Developers and SG Guests.
 resource "azuread_group" "developers" {
-  depends_on = [ azuread_group.admins ]
+  depends_on = [azuread_group.admins]
   display_name = format(
     "%s%s",
     "SG Developers",
     local.cur_user_id,
   )
-  owners           = azuread_group.admins.members
-  security_enabled = true  
+  #owners           = azuread_group.admins.members
+  security_enabled = true
   #assignable_to_role  = true
 }
 
 resource "azuread_group_member" "developers" {
-   
-  for_each = { for u in azuread_user.users : u.mail_nickname => u if u.department == "Developers" }
+
+  for_each = { for user in local.users : user.name => user if user.department == "Developers" }
 
   group_object_id  = azuread_group.developers.id
-  member_object_id = each.value.id
+  member_object_id = azuread_user.users[each.key].id
 }
 
-resource "azuread_group" "guests" {  
-  depends_on = [ azuread_group.admins ]
+resource "azuread_group" "guests" {
+  depends_on = [azuread_group.admins]
   display_name = format(
     "%s%s",
     "SG Guests",
     local.cur_user_id,
   )
-  owners           = azuread_group.admins.members
-  security_enabled = true  
+  #owners           = azuread_group.admins.members
+  security_enabled = true
   #assignable_to_role  = true
 }
 
 resource "azuread_group_member" "guests" {
-  
-  for_each = { for u in azuread_user.users : u.mail_nickname => u if u.department == "Guests" }
+
+  for_each = { for user in local.users : user.name => user if user.department == "Guests" }
 
   group_object_id  = azuread_group.guests.id
-  member_object_id = each.value.id
+  member_object_id = azuread_user.users[each.key].id
 }
 
 #Assign Entra ID Global Reader role to the user dev.

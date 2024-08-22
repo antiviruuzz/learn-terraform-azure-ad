@@ -13,8 +13,15 @@ data "azuread_user" "current_user" {
 data "azurerm_subscription" "primary" {
 }
 
+data "local_file" "users_csv" {
+  filename = "${path.module}/users.csv"
+}
 locals {
-  domain_name = data.azuread_domains.default.domains.0.domain_name  
+  domain_name = data.azuread_domains.default.domains.0.domain_name
+  users = [for row in csvdecode(data.local_file.users_csv.content) : {
+    name       = row.name
+    department = row.department
+  }]
   cur_user_id = data.azuread_user.current_user.object_id
   tags = {
     purpose = "Skillup"
@@ -112,5 +119,5 @@ resource "azurerm_role_assignment" "contributor_app_rg" {
   scope                = azurerm_resource_group.skillup_rg.id
   role_definition_name = "Contributor"
   principal_id         = azuread_service_principal.app_reg_sp.object_id
-} 
+}
 
